@@ -7,3 +7,4 @@ astropy==6.1.0
 numpy==1.26.4
 reproject==0.14.0
 matplotlib==3.8.2
+ccdproc==2.4.1

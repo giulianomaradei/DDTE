@@ -1,36 +1,41 @@
-#!/usr/bin/env python3
-"""
-Script simples para verificar se uma imagem FITS tem WCS
-"""
+import align_images
+import combine_images
+import glob
+from pathlib import Path
 
-from astropy.io import fits
-from astropy.wcs import WCS
+def find_fits_files(data_dir):
+    """Encontrar todos os arquivos FITS no diretório"""
+    patterns = ['**/*.fits', '**/*.fit', '**/*.fts']
+    fits_files = []
 
-# Caminho para sua imagem FITS
-fits_file = "data/sci/2023/0726/348762/ztf_20230726348762_000796_zg_c11_o_q1_sciimg.fits"
+    for pattern in patterns:
+        fits_files.extend(glob.glob(str(data_dir / pattern), recursive=True))
 
-print(f"Verificando: {fits_file}\n")
+    return sorted(fits_files)
 
-# Abrir arquivo
-hdu = fits.open(fits_file)[0]
-header = hdu.header
+def main():
+    MAX_IMAGES = 3  # None para processar todas
 
-# Tentar criar WCS
-wcs = WCS(header)
+    project_root = Path(__file__).parent.parent
+    data_dir = project_root / "data"
 
-# Verificar se tem WCS
-if wcs.has_celestial:
-    print("✓ TEM WCS!\n")
-    print(wcs)
+    fits_files = find_fits_files(data_dir)
 
-    # Exemplo: converter pixel do centro para coordenadas
-    if hdu.data is not None:
-        center_x = hdu.data.shape[1] // 2
-        center_y = hdu.data.shape[0] // 2
-        ra, dec = wcs.all_pix2world(center_x, center_y, 0)
-        print(f"\nCentro da imagem:")
-        print(f"  Pixel: ({center_x}, {center_y})")
-        print(f"  RA: {ra:.6f}°")
-        print(f"  Dec: {dec:.6f}°")
-else:
-    print("✗ NÃO TEM WCS")
+    if MAX_IMAGES is not None and len(fits_files) == 0:
+        print(f"\n❌ Nenhum arquivo FITS encontrado em {data_dir}")
+        return
+
+    if len(fits_files) > MAX_IMAGES:
+        fits_files = fits_files[:MAX_IMAGES]
+
+    output_dir = align_images.process(fits_files)
+
+    print(f"Output directory: {output_dir}")
+
+    avg_combined = combine_images.process(output_dir)
+
+    avg_combined.write(output_dir / "avg_combined.fits")
+
+
+if __name__ == "__main__":
+    main()
