@@ -25,11 +25,13 @@ wheels/
 *.egg
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# data
+data/
 
 # Environment
 .env

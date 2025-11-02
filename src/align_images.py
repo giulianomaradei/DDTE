@@ -256,7 +256,7 @@ def main():
     # ============================================
     # CONFIGURAÇÃO: Limitar número de imagens
     # ============================================
-    MAX_IMAGES = 5  # None para processar todas
+    MAX_IMAGES = 20  # None para processar todas
 
     # Diretórios
     project_root = Path(__file__).parent.parent
