@@ -1,7 +1,10 @@
 import align_images
 import combine_images
+import detect_events
 import glob
 from pathlib import Path
+from ccdproc import CCDData
+import astropy.units as u
 
 def find_fits_files(data_dir):
     """Encontrar todos os arquivos FITS no diretório"""
@@ -14,7 +17,7 @@ def find_fits_files(data_dir):
     return sorted(fits_files)
 
 def main():
-    MAX_IMAGES = 3  # None para processar todas
+    MAX_IMAGES = None # None para processar todas
 
     project_root = Path(__file__).parent.parent
     data_dir = project_root / "data"
@@ -25,17 +28,36 @@ def main():
         print(f"\n❌ Nenhum arquivo FITS encontrado em {data_dir}")
         return
 
-    if len(fits_files) > MAX_IMAGES:
+    if MAX_IMAGES is not None and len(fits_files) > MAX_IMAGES:
         fits_files = fits_files[:MAX_IMAGES]
 
-    output_dir = align_images.process(fits_files)
+    # output_dir = align_images.process(fits_files)
+    output_dir = Path("/media/giuliano/Disco D/DDTE/output/aligned")
 
     print(f"Output directory: {output_dir}")
 
-    avg_combined = combine_images.process(output_dir)
+    # median_combined = combine_images.process(output_dir)
+    # median_combined.write(output_dir / "median_combined.fits", overwrite=True)
 
-    avg_combined.write(output_dir / "avg_combined.fits")
 
+    aligned_images = find_fits_files(output_dir)
+    # remove median_combined.fits from aligned_images
+    aligned_images.remove(str(output_dir / "median_combined.fits"))
+
+    median_combined = CCDData.read(output_dir / "median_combined.fits", unit=u.adu)
+    loopCount = 0
+    for fits_file in aligned_images:
+        print(f"Processing {fits_file}")
+        science_image = CCDData.read(fits_file, unit=u.adu)
+        events = detect_events.process(median_combined, science_image)
+        print(events)
+        loopCount+=1
+        if loopCount > 50:
+            break
+
+    print(f"Found {len(events)} events")
+    print(events)
+    exit()
 
 if __name__ == "__main__":
     main()

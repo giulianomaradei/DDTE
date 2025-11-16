@@ -55,6 +55,8 @@ def process(fits_files):
     ref_data, ref_wcs, ref_header = load_fits_image(fits_files[0])
     ref_shape = ref_data.shape
 
+    print('BUNIT: ', ref_header['BUNIT'])
+
 
     # Salvar referência (cópia)
     ref_output = output_dir / "0_reference.fits"
@@ -101,13 +103,8 @@ def process(fits_files):
 
             # Atualizar header com informações
             new_header = ref_header.copy()
-            print(f"current coverage: {new_header['COVERAGE']}")
-            print(f"current aligned: {new_header['ALIGNED']}")
-            print(f"current comment: {new_header['COMMENT']}")
 
-            new_header['COMMENT'] = f'Aligned from {filename}'
-            new_header['ALIGNED'] = True
-            new_header['COVERAGE'] = (coverage, 'Percentage of valid pixels')
+            print('BUNIT: ', new_header['BUNIT'])
 
             fits.writeto(output_file, aligned, new_header, overwrite=True)
             print(f"   ✓ Salva em: {output_file}")
