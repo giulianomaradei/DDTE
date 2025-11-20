@@ -1,6 +1,7 @@
 from ccdproc import CCDData, Combiner
 import astropy.units as u
 from pathlib import Path
+import gc
 
 def process(files_dir):
     print(f"Combining images in {files_dir}")
@@ -35,5 +36,9 @@ def process(files_dir):
     print(f"\nCombining {len(ccd_list)} images using median...")
     median_combined = c.median_combine()
     print("✓ Combination complete")
+
+    # Limpar lista de imagens da memória após combinação
+    del ccd_list, c
+    gc.collect()
 
     return median_combined

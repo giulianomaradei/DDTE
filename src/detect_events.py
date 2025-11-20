@@ -3,6 +3,7 @@ from scipy import ndimage
 import numpy as np
 import astropy.wcs as wcs
 from astropy.io import fits
+import gc
 
 
 #multi line comment
@@ -146,5 +147,8 @@ def process(reference_image, science_image):
 
     # Ordenar eventos por SNR (maior primeiro)
     events.sort(key=lambda x: x['snr'], reverse=True)
+
+    # Limpar arrays grandes da memória
+    del difference, valid_difference, significant_mask, labeled_mask, feature_mask, valid_mask
 
     return events

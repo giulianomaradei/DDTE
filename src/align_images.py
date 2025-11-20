@@ -9,10 +9,7 @@ from pathlib import Path
 from astropy.io import fits
 from astropy.wcs import WCS
 from reproject import reproject_interp
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
-import os
-import shutil
+import gc
 
 
 def find_fits_files(data_dir):
@@ -76,9 +73,8 @@ def process(fits_files):
     fits.writeto(ref_output, ref_data, ref_header, overwrite=True)
     print(f"   ✓ Salva em: {ref_output}")
 
-    # Lista para visualização depois
-    aligned_images = [ref_data]
-    filenames = [Path(fits_files[0]).name]
+    # Limpar referência da memória após salvar (não precisamos manter em memória)
+    del ref_data
 
     # Reprojetar todas as outras imagens
     print(f"\n{'='*60}")
@@ -130,12 +126,22 @@ def process(fits_files):
             fits.writeto(output_file, aligned, new_header, overwrite=True)
             print(f"   ✓ Salva em: {output_file}")
 
-            # # Guardar para visualização
-            aligned_images.append(aligned)
-            filenames.append(filename)
+            # Limpar dados da memória após salvar
+            del data, aligned, footprint, wcs, header, new_header
+
+            # Forçar garbage collection a cada 10 imagens para liberar memória
+            if i % 10 == 0:
+                gc.collect()
 
         except Exception as e:
             print(f"   ❌ ERRO: {e}")
+            # Garantir limpeza mesmo em caso de erro
+            if 'data' in locals():
+                del data
+            if 'aligned' in locals():
+                del aligned
+            if 'footprint' in locals():
+                del footprint
             continue
 
     print(f"\n{'='*60}")

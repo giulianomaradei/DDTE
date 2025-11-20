@@ -5,6 +5,9 @@ import glob
 from pathlib import Path
 from ccdproc import CCDData
 import astropy.units as u
+from astropy.io import fits
+from astropy.wcs import WCS
+import gc
 
 def find_fits_files(data_dir):
     """Encontrar todos os arquivos FITS no diretório"""
@@ -31,8 +34,8 @@ def main():
     if MAX_IMAGES is not None and len(fits_files) > MAX_IMAGES:
         fits_files = fits_files[:MAX_IMAGES]
 
-    # output_dir = align_images.process(fits_files)
-    output_dir = Path("/media/giuliano/Disco D/DDTE/output/aligned")
+    output_dir = align_images.process(fits_files)
+    # output_dir = Path("/media/giuliano/Disco D/DDTE/output/aligned")
 
     print(f"Output directory: {output_dir}")
 
@@ -44,6 +47,9 @@ def main():
     # remove median_combined.fits from aligned_images
     aligned_images.remove(str(output_dir / "median_combined.fits"))
 
+    # Sort by modification time (most recent first)
+    aligned_images.sort(key=lambda f: Path(f).stat().st_mtime, reverse=True)
+
     median_combined = CCDData.read(output_dir / "median_combined.fits", unit=u.adu)
     loopCount = 0
     for fits_file in aligned_images:
@@ -51,7 +57,15 @@ def main():
         science_image = CCDData.read(fits_file, unit=u.adu)
         events = detect_events.process(median_combined, science_image)
         print(events)
-        loopCount+=1
+
+        # Limpar imagem da memória após processar
+        del science_image
+
+        # Forçar garbage collection a cada 10 imagens
+        loopCount += 1
+        if loopCount % 10 == 0:
+            gc.collect()
+
         if loopCount > 50:
             break
 
