@@ -39,6 +39,15 @@ def process(fits_files):
     # Diretórios
     project_root = Path(__file__).parent.parent
     output_dir = project_root / "output" / "aligned"
+    red_filter_dir = output_dir / "ZTF_r"
+    green_filter_dir = output_dir / "ZTF_g"
+    infrared_filter_dir = output_dir / "ZTF_i"
+
+    filter_type_to_dir = {
+        'ZTF_r': red_filter_dir,
+        'ZTF_g': green_filter_dir,
+        'ZTF_i': infrared_filter_dir
+    }
 
     print("ALINHAMENTO DE IMAGENS FITS")
 
@@ -49,6 +58,10 @@ def process(fits_files):
 
     # Criar diretório de saída
     output_dir.mkdir(exist_ok=True, parents=True)
+    red_filter_dir.mkdir(exist_ok=True, parents=True)
+    green_filter_dir.mkdir(exist_ok=True, parents=True)
+    infrared_filter_dir.mkdir(exist_ok=True, parents=True)
+
 
     # Carregar imagem de referência (primeira)
     print(f"\n📍 Usando como referência: {Path(fits_files[0]).name}")
@@ -99,17 +112,25 @@ def process(fits_files):
             print(f"   NaNs: {np.sum(np.isnan(aligned))}")
 
             # Salvar imagem alinhada
-            output_file = output_dir / f"{i}_aligned_{filename}"
+            filter_type = header['FILTER']
+            print(f"Filter type: {filter_type}")
+            filter_dir = filter_type_to_dir[filter_type]
+
+
+            output_file = filter_dir / f"{i}_aligned_{filename}"
 
             # Atualizar header com informações
             new_header = ref_header.copy()
+            new_header['DATE-OBS'] = header.get('DATE-OBS', '')
+            new_header['EXPTIME'] = header.get('EXPTIME', '')
+            new_header['FILTER'] = header.get('FILTER', '')
 
             print('BUNIT: ', new_header['BUNIT'])
 
             fits.writeto(output_file, aligned, new_header, overwrite=True)
             print(f"   ✓ Salva em: {output_file}")
 
-            # Guardar para visualização
+            # # Guardar para visualização
             aligned_images.append(aligned)
             filenames.append(filename)
 
