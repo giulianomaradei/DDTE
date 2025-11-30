@@ -3,7 +3,17 @@ import astropy.units as u
 from pathlib import Path
 import gc
 
-def process(files_dir):
+def process(files_dir, max_images=None):
+    """
+    Combina imagens FITS de um diretório específico usando median combine.
+
+    Args:
+        files_dir: Diretório contendo as imagens FITS a serem combinadas
+        max_images: Número máximo de imagens a carregar (None para todas)
+
+    Returns:
+        CCDData: Imagem combinada usando median
+    """
     print(f"Combining images in {files_dir}")
 
     # Convert to Path object if it isn't already
@@ -17,6 +27,11 @@ def process(files_dir):
 
     print(f"Found {len(fits_files)} FITS files")
 
+    # Limitar número de imagens se especificado
+    if max_images is not None and len(fits_files) > max_images:
+        fits_files = fits_files[:max_images]
+        print(f"Limiting to {max_images} images")
+
     # Load all FITS files as CCDData objects
     # Pass unit='adu' to handle invalid BUNIT header values like "Data Value"
     # ADU (Analog-to-Digital Units) is the standard unit for CCD data
@@ -25,9 +40,6 @@ def process(files_dir):
         ccd = CCDData.read(fits_file, unit=u.adu)
         ccd_list.append(ccd)
         print(f"  ✓ Loaded {fits_file.name}")
-
-        if len(ccd_list) > 20:
-            break
 
     c = Combiner(ccd_list)
     print(f"\nUsing sigma-clipped median...")
